@@ -1,0 +1,29 @@
+{
+  "enabledMcpjsonServers": ["oracle-fusion"],
+  "permissions": {
+    "allow": [
+      "mcp__oracle-fusion",
+      "WebFetch(domain:docs.oracle.com)",
+      "WebSearch",
+      "Edit(knowledge/**)",
+      "Edit(playbooks/**)",
+      "Edit(config-docs/**)",
+      "Edit(reports/**)",
+      "Edit(backups/**)",
+      "Edit(fbdi/work/**)",
+      "Bash(.venv/Scripts/python.exe -m pytest:*)",
+      "Bash(.venv/Scripts/python.exe scripts/smoke_test.py:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.dev)",
+      "Read(./.env.test)",
+      "Read(./.env.prod)",
+      "Edit(./.env)",
+      "Edit(./.env.dev)",
+      "Edit(./.env.test)",
+      "Edit(./.env.prod)",
+      "Read(./.browser-profile/**)"
+    ]
+  }
+}

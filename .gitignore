@@ -1,0 +1,29 @@
+# secrets and environment profiles (.env.example has no values and stays tracked as the template)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.claude/settings.local.json
+
+# signed-in browser session (channel D)
+.browser-profile/
+playwright-out/
+
+# data that may contain customer setup / transactions
+logs/
+backups/
+reports/*
+!reports/.gitkeep
+fbdi/work/
+fbdi/*.zip
+fbdi/templates/*.xlsm
+config-docs/*
+!config-docs/.gitkeep
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/

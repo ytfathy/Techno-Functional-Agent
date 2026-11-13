@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "oracle-fusion": {
+      "command": ".venv\\Scripts\\python.exe",
+      "args": ["-m", "oracle_fusion_mcp.server"],
+      "env": { "ORACLE_PROFILE": "test" }
+    }
+  }
+}
