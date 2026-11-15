@@ -1,10 +1,10 @@
 # oracle-scm-agent — Progress & handoff
 
 > Updated at the end of every phase. To continue in another Claude account/session: open Claude Code in this folder and paste the "Resume prompt" at the bottom.
-> Last update: 2026-11-14 — Phases 1–4 and 6 done; Phase 5 playbooks drafted (need first live run).
+> Last update: 2026-11-15 — Phases 1–6 done. **Next work = "Next steps — backlog" below (priority order).** Dated sections after it are history.
 
 ## Goal (short)
-An executing AI agent (Claude Code project) that acts as a senior Oracle Fusion Cloud SCM & Procurement consultant. The user writes a request (Arabic/English) and the agent does the setup or transaction in Fusion itself via 4 channels (A REST, B FSM CSV, C FBDI/ESS, D Playwright UI), with safety rules, backups, an audit log and config docs. Full original brief: [SPEC.md](SPEC.md). User guide: [README.md](README.md).
+An executing AI agent (Claude Code project) that acts as a senior Oracle Fusion Cloud SCM & Procurement consultant. The user writes a request (Arabic/English) and the agent does the setup or transaction in Fusion itself via 4 channels (A REST, B FSM CSV, C FBDI/ESS, D UI in the Claude browser pane — only on request or for UI-only tasks), with safety rules, backups, an audit log and config docs. Full original brief: [SPEC.md](SPEC.md). User guide: [README.md](README.md).
 
 ## Decisions taken
 | Item | Decision |
@@ -13,8 +13,8 @@ An executing AI agent (Claude Code project) that acts as a senior Oracle Fusion 
 | TEST pod | User-filled `.env.test`: an Oracle demo pod, user `hcm_impl`, Basic Auth. Base URL is normalized to the pod root automatically. |
 | Auth | Basic Auth on TEST. OAuth client credentials is coded, but per the 26D docs it does NOT work for `/fscmRestApi`, `/hcmRestApi` or SCIM (only `/api/...`). Use Basic or JWT user assertion. |
 | Python / SDK | System Python 3.14 in `.venv`; **`mcp>=1.2,<2`** (mcp 2.x renamed FastMCP → pinned to keep FastMCP as the brief asks) |
-| Browser for channel D | Microsoft Edge (`--browser msedge`, Chrome not installed); profile in `.browser-profile/` |
-| Agent reply language | Egyptian Arabic, Oracle terms in English (CLAUDE.md) |
+| Browser for channel D | Claude desktop app browser pane (`mcp__Claude_Browser__*`). Playwright/Edge removed 2026-11-14. Backend (A/B/C) is the default since 2026-11-15 |
+| Agent reply language | **English** (user asked 2026-11-14), Oracle terms exactly as Oracle names them |
 
 ## Phase status
 | Phase | Status | Evidence |
@@ -27,8 +27,8 @@ An executing AI agent (Claude Code project) that acts as a senior Oracle Fusion 
 | 5. Playwright playbooks | DRAFTED | 6 playbooks DRAFT-FROM-DOCS: create-business-unit, assign-business-unit-business-function, configure-procurement-bf, configure-requisitioning-bf, document-styles, approval-rules. **Need a first live run** (the user signs in to Edge once) |
 | 6. commands, subagents, bulk, README | **DONE** | 14 slash commands, 3 subagents, bulk module, README (access setup + verified role codes + examples) |
 
-Tests: **29 passed** (pytest + respx, mocked HTTP only). MCP server verified over a real stdio connection: **42 tools**, `env_info` OK.
-**No write has been sent to the real pod yet** (only reads, describe, setupTasks, SCIM role lookups).
+Tests: **43 passed** (pytest + respx, mocked HTTP only). MCP server: **43 tools** (incl. `disconnect`).
+Writes done on the TEST pod (all with the user's OK): 4 roles + US1 data access for `hcm_impl`; supplier 1501 + address + site CAIRO-TEST (FBDI); BU "YT Business Unit". See the dated sections below and `config-docs/`.
 
 ## Key findings that changed the design
 - **Channel B covers almost all setup on 26D.** These tasks have `CSVExportImportSupportedFlag=Y`:
@@ -58,7 +58,35 @@ Tests: **29 passed** (pytest + respx, mocked HTTP only). MCP server verified ove
 - `scripts/smoke_test.py`, `tests/` (conftest, test_client_generic, test_tools).
 - `knowledge/` (41 files), `playbooks/` (6 + template), `config-docs/`, `reports/`, `backups/`, `logs/`, `fbdi/templates/` (empty: download official 26D XLSM templates on demand, asking the user first).
 
-## Next steps
+## Next steps — backlog (priority order; written 2026-11-15 for the next Claude account)
+Rules for whoever continues: read `CLAUDE.md` first. Never write to the pod without the user's "yes". Update this file after each item. Reply to the user in English.
+
+**State at handoff:** agent OFF. The `oracle-fusion` MCP often hits CONNECT_TIMEOUT (30 s) at session start; server import takes ~1.2 s, so it is a cold start: reconnect it from the MCP menu / reload the project, then `/agent on`.
+
+1. **FBDI file builder bug (code, blocks every bulk load).** `fbdi.fbdi_template_columns` / `fbdi_build_zip` take the column order from the XLSM sheet via openpyxl. Oracle loads the CSV in **control-file (.ctl) order**, and openpyxl cannot read Oracle's `.xlsm` reliably (supplier-site load failed until the CSV was rebuilt by hand in ctl order; see `knowledge/channel-c-fbdi-ess.md`).
+   - Fix: read sheet XML with `zipfile` (no openpyxl); take column order from the ctl (SQL*Loader log of a failed load, or Oracle's published controlfiles); let the caller pass an explicit column list.
+   - `fbdi_import` / `ess_status`: the import job is a **separate request id (load ReqstId + 1)**, not a child of the load. Add a helper that waits for and reports that import job.
+   - Add tests (mocked). Affects: ItemImportTemplate, SupplierSiteImportTemplate, SupplierSiteAssignmentImportTemplate, ASL, on-hand, locators.
+2. **Roles for inventory/item/cost work (pod write — ask the user first).** `hcm_impl` only has the 4 procurement roles → inventory/item/costing writes will 403. Grant via SCIM `PATCH Roles/{id}` members ADD (same method as before, `knowledge/users-roles.md`): Inventory Manager `ORA_INV_INVENTORY_MANAGER_JOB`, Product Data Steward `ORA_EGI_PRODUCT_DATA_STEWARD_JOB`, Cost Accountant (look up the code on the pod), + data access to the inventory orgs. Back up roles first; run `smoke_test` after.
+3. **Inventory / item org flow.** New commands `/new-inv-org` and `/new-item-org` (like `/new-bu`): fixed prerequisite checklist (location, workday/schedule calendar, item master org, reference data set, cost org assignment, interorg parameters) → reads → creates. After the first real run add shortcuts `create_inventory_org`, `create_subinventory`, `create_item` (with duplicate checks + tests). Knowledge: `inventory-organizations.md` (5 UNVERIFIED), `subinventories-locators.md` (3), `item-organizations.md` (2), `items-item-classes.md` (2) — confirm on the pod and clear the flags.
+4. **Missing knowledge areas** (no file in `knowledge/`; use the `oracle-researcher` subagent, 26D docs, cite URLs, then add to `INDEX.md` + `dependencies.md` + `fsm-task-codes.md`). Order:
+   1. Cost Management (cost orgs, cost books, valuation units/structures, cost profiles, cost org relationships) — needed before inventory transactions.
+   2. Inventory transactions (misc. issue/receipt, subinventory transfer, interorg transfer, cycle count, physical inventory, min-max, ABC).
+   3. Shipping execution (release rules, pick wave, pick confirm, ship confirm, shipping parameters).
+   4. Order Management (order types, orchestration, pricing basics, Global Order Promising).
+   5. Supply Chain Financial Orchestration (intercompany flows).
+   6. Workday / schedule calendars; flexfields (DFF/EFF segments + deploy); sourcing negotiations.
+5. **UI-only tasks (channel D) — verify playbooks once.** Approval rules (BPM), Manage BU Data Access for Users, flexfield deploy, some profile options. All 6 playbooks are still DRAFT-FROM-DOCS: run each once on TEST (with the user's OK) and set VERIFIED-ON-POD.
+6. **Pending from earlier work (ask the user before continuing):**
+   - Supplier 1501 site CAIRO-TEST has **no site assignment** to US1 (would use `SupplierSiteAssignmentImportTemplate.xlsm` → `ImportSupplierSiteAssignments`; needs item 1 fixed first).
+   - YT Business Unit has **0 set assignments**; the import zip `fbdi/work/FUN_MANAGE_BUSINESS_UNIT-YT-setassign-import.zip` (69 groups → COMMON) is ready; user said "leave as is".
+7. **Speed items proposed but not approved:** run `config-reviewer` only for high-impact or PROD plans (not every plan > 3 steps).
+8. **Production readiness:** dedicated `AI_SCM_AGENT` user with the roles in README (demo pod uses `hcm_impl`); first FSM CSV structure notes in `knowledge/channel-b-fsm-csv.md`.
+
+Already done (do not redo): describe disk cache (2026-11-15); backend-default channels (2026-11-15); `/agent on|off`; connection form; cookie clear per request; SCIM GET fix; `fsm._first()` fix.
+
+<details><summary>Old next-steps list (history)</summary>
+
 1. ~~Reopen Claude Code in this folder~~ **DONE 2026-11-14**: both MCPs load (oracle-fusion 42 tools, playwright); `env_info` = TEST / 26D / basic / `hcm_impl` / mode `confirm`; live `smoke_test` 13/13 OK.
 2. **First real write test on TEST** — IN PROGRESS. Prepared (reads only): no supplier `AI Agent Test Supplier 01` exists; procurement BU candidate `US1 Business Unit` (exists, active). `create_supplier` dry run OK, field_check clean (warning: `SupplierPartyId`, `SupplierNumber` mandatory per describe but expected to default). User said yes; **live POST `suppliers` → HTTP 403** (empty body, no Oracle code). Read-back: nothing created. `hcm_impl` can read but not create suppliers (missing Supplier Manager `ORA_POZ_SUPPLIER_MANAGER_ABSTRACT` and/or BU data access). `hcm_impl`'s own roles are not visible via `userAccounts` (exact-name query returns 0 rows). **Blocked**: need a pod user with procurement write roles (or roles granted to `hcm_impl`), then rerun the same 4-step flow. Recorded in `knowledge/error-codes.md`; `log_request` done.
    - 2026-11-14 user chose "grant roles to `hcm_impl`". Done (reads only): fixed `client.get` for SCIM (ADF params were rejected; httpx dropped the path query) + test (30 passed; **MCP server must be restarted to pick up the fix**); found `hcm_impl` has IT Security Manager (can PATCH SCIM Roles); role GUIDs and `dataSecurities` BU row format verified (in `knowledge/users-roles.md`, `knowledge/bu-data-access.md`); backup `backups/2026-11-14/security-hcm_impl-roles-before.json` (35 roles, 0 data access rows); dry runs OK for SCIM `PATCH Roles/{id}` members ADD and `POST dataSecurities`. User approved. **DONE**: 4 roles granted to `hcm_impl` (SCIM 204 ×4) + 4 `dataSecurities` rows on US1 (see `config-docs/security.md`). Supplier retry from the MCP still 403 (stale session cookie) → fixed `client.py` (clear cookies per call). From a fresh process: **supplier created** `SupplierId 300000349308087`, `SupplierNumber 1501`; **address** `Cairo HQ` `300000349308094`. **Site `CAIRO-TEST` → 403** (likely: `hcm_impl` is not a procurement agent on US1 with Manage Suppliers; no agent row for `<shared demo email>`). User OK'd the agent. **`POST procurementAgents` → PO-2055145** (AgentEmail invalid): `<shared demo email>` is shared by 25+ "HCM Implementation*" persons and `hcm_impl` has no person of its own → `hcm_impl` cannot be a procurement agent → cannot create supplier sites by REST. **Blocked; options for the user:** (a) switch the agent profile to a demo user that is already a US1 agent with Manage Suppliers (e.g. `CALVIN.ROTH`, also has Manage Orders — good for `/p2p-test`; user fills creds in `.env.*`); (b) create the site with FBDI Import Supplier Sites as `hcm_impl` (UNVERIFIED whether import skips agent BU security). **User then rejected CALVIN.ROTH ("dont use calvin") — do NOT use it.** Remaining route: (b) FBDI Import Supplier Sites as `hcm_impl` (needs the 26D `SupplierSiteImportTemplate.xlsm`, download only with the user's OK). **FBDI route DONE for the site (2026-11-14):** template `fbdi/templates/SupplierSiteImportTemplate.xlsm` downloaded (user OK); importBulkData `/oracle/apps/ess/prc/poz/supplierImport,ImportSupplierSites` `NEW,N,AIAGENT1114` → Import Supplier Sites 10198003 SUCCEEDED, 1 processed / 0 rejected → **site CAIRO-TEST created** (not readable via REST by `hcm_impl`). Lessons in `knowledge/channel-c-fbdi-ess.md` (CSV order = ctl order; import child is a separate request id). Code: `fbdi_import` no longer sends AP `JobOptions` by default. **Known bug:** `fbdi_build_zip`/`fbdi_template_columns` use sheet order + openpyxl → wrong/failing for supplier templates; fix = take column order from the ctl (SQL*Loader log or Oracle controlfiles URL). **User said stop here (2026-11-14).** Not done: site assignment to US1 (would use `SupplierSiteAssignmentImportTemplate.xlsm`, 386 KB, ask before download → `ImportSupplierSiteAssignments`). Test supplier 1501 is left with address + site, no assignment. Earlier notes on Calvin kept for reference: Read check: CALVIN.ROTH already has Supplier Manager, Buyer, Procurement Requester, Procurement Manager, Receiving Agent, Supplier Administrator and an active US1 agent row with Manage Suppliers (`AssignmentId 300000047348441`) → no grants needed. **Waiting for the user to create `.env.calvin`** (copy of `.env.test` with `ORACLE_USERNAME=CALVIN.ROTH` + its password, `ORACLE_ENV_NAME=TEST`); then `switch_environment("calvin")` → site `CAIRO-TEST` → assignment US1 → read-back. US1 agents with Manage Suppliers: Casey Brown, Karen Curtis, Calvin Roth, Tiffany Irving, May Gee, Saville Miller, Amy Marlin, Rosario Arrendondo, Ava Clark, John Dunbar. Restart/reconnect the MCP server so it loads the SCIM + cookie fixes. See `config-docs/suppliers.md`.
@@ -67,6 +95,8 @@ Tests: **29 passed** (pytest + respx, mocked HTTP only). MCP server verified ove
 4. **First FSM CSV export** (e.g. `/export-setup Manage Document Styles`) to see the real CSV structure; record it in `knowledge/channel-b-fsm-csv.md`.
 5. When a bulk FBDI load is needed: download the 26D template (ask the user) and read the ESS job path on the pod.
 6. Production: create the dedicated `AI_SCM_AGENT` user with the roles in README (the demo pod uses `hcm_impl`).
+
+</details>
 
 ## 2026-11-14 — Connection form (session start)
 - User asked for a start-up screen for instance URL / username / password (they change). Monitoring page and in-browser chat were proposed and **dropped by the user**.
