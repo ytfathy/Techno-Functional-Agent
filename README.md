@@ -1,6 +1,6 @@
 # oracle-scm-agent
 
-An executing AI agent for **Oracle Fusion Cloud SCM & Procurement**. Open Claude Code in this folder, write a request in Arabic or English, and the agent does the setup or transaction in Fusion itself, the way a senior implementation consultant would. It reads the current setup and checks prerequisites first, picks the right channel, backs up, executes, verifies and documents.
+An executing AI agent for **Oracle Fusion Cloud SCM & Procurement**. Open Claude Code in this folder, write a request in English (Arabic also works), and the agent does the setup or transaction in Fusion itself, the way a senior implementation consultant would. It reads the current setup and checks prerequisites first, picks the right channel, backs up, executes, verifies and documents.
 
 It is not an advisor. It acts through 4 channels:
 
@@ -100,19 +100,19 @@ When you ask to watch, the agent uses the **Claude browser pane** in the Claude 
 
 ## Using it
 
-Open Claude Code in this folder and write a request. The agent replies in Egyptian Arabic and keeps Oracle terms in English.
+Open Claude Code in this folder and write a request. The agent replies in English and keeps Oracle terms exactly as Oracle names them.
 
 ### Example requests
-- «اعمل سبلاير اسمه Nile Trading، رقمه الضريبي 123، سايت في القاهرة على BU اسمه Egypt Operations»
+- "Create a supplier called Nile Trading, tax registration number 123, with a site in Cairo on the BU Egypt Operations"
   → `create_supplier` → `add_supplier_address` → `create_supplier_site` → `assign_site_to_bu` → `add_supplier_contact`, as separate calls with duplicate checks.
-- «اعمل BU جديد اسمه KSA Retail، بلوكيشن في الرياض، وفعّل عليه Requisitioning و Procurement و Payables، وظبط له الـ procurement كامل»
+- "Create a new BU called KSA Retail with a location in Riyadh, enable Requisitioning, Procurement and Payables on it, and complete its procurement setup"
   → `/new-bu`: full chain from [knowledge/dependencies.md](knowledge/dependencies.md). The plan is reviewed by config-reviewer and needs a double confirmation (high-impact).
-- «اعمل Document Style جديد للـ PO اسمه Services PO» → REST `purchasingDocumentStyles` (or FSM CSV `PO_MANAGE_DOCUMENT_STYLES`).
-- «اعمل approval rule: أي ريكوزيشن أكبر من 50,000 تروح للمدير وبعدين لـ Finance» → `/approval-rule`, channel D ([playbooks/approval-rules.md](playbooks/approval-rules.md)), then a test requisition to check the routing.
-- «خلي أحمد buyer على الـ BU الجديد بكل الصلاحيات» → `create_procurement_agent(all_access=True)`, which sets every action flag and Full access to other agents' documents.
-- «اعمل ريكوزيشن تست وحولها PO وعمل receipt عشان أتأكد إن الـ setup شغال» → `/p2p-test`.
-- «طلعلي كل السبلايرز اللي مالهمش site assignment على BU Egypt Operations» → `/find` (read-only, saved to `reports/` if large).
-- «اعمل Carrier جديد اسمه FastShip وفعّله على الـ inventory org بتاع القاهرة» → `create_carrier` → `add_carrier_ship_method` → `enable_ship_method_on_org`.
+- "Create a new PO Document Style called Services PO" → REST `purchasingDocumentStyles` (or FSM CSV `PO_MANAGE_DOCUMENT_STYLES`).
+- "Create an approval rule: any requisition above 50,000 goes to the manager, then to Finance" → `/approval-rule`, channel D ([playbooks/approval-rules.md](playbooks/approval-rules.md)), then a test requisition to check the routing.
+- "Make Ahmed a buyer on the new BU with all actions" → `create_procurement_agent(all_access=True)`, which sets every action flag and Full access to other agents' documents.
+- "Create a test requisition, turn it into a PO and receive it, to check the setup works" → `/p2p-test`.
+- "List all suppliers with no site assignment on BU Egypt Operations" → `/find` (read-only, saved to `reports/` if large).
+- "Create a new carrier called FastShip and enable it on the Cairo inventory org" → `create_carrier` → `add_carrier_ship_method` → `enable_ship_method_on_org`.
 
 ### Model and cost
 - Main session: **Opus 5.5, effort medium** (set it in the app's model / effort picker). Planning, safety rules and Oracle errors need Opus; high effort adds little here.
