@@ -9,7 +9,7 @@ It is not an advisor. It acts through 4 channels:
 | A | Business REST (`/fscmRestApi`, `/hcmRestApi`) | Master data and transactions (suppliers, agents, requisitions, POs, receipts, carriers, locations…) |
 | B | FSM Setup Task CSV (`setupTaskCSVExports/Imports`) | Setup tasks. On 26D this includes BU, business functions, Configure Procurement/Requisitioning BF, numbering, service providers… ([knowledge/fsm-task-codes.md](knowledge/fsm-task-codes.md)) |
 | C | FBDI + ESS (`erpintegrations`) | Bulk loads and scheduled processes |
-| D | Fusion UI in the Claude browser pane — **default for changes** | Any setup or transaction with a Fusion screen; you watch every step. A/B/C are used for reads, backups, verification, bulk loads and scheduled processes |
+| D | Fusion UI in the Claude browser pane — **only on request** | When you ask to watch the work, or the task has no API path (e.g. approval rules). Everything else runs on the backend (A/B/C), which is much faster |
 
 The operating rules are in [CLAUDE.md](CLAUDE.md): the request loop, safety rules and modes. The original brief is in [SPEC.md](SPEC.md), and build status is in [PROGRESS.md](PROGRESS.md).
 
@@ -91,8 +91,8 @@ Also request:
 It makes one GET per area and reports `OK`, `MISSING PRIVILEGE` (403, with the role that grants it), `AUTH FAILED` (401) or `NOT FOUND`. Inside Claude Code you can also just ask "run the smoke test".
 
 ### 4. Browser channel (watch the agent)
-The agent uses the **Claude browser pane** in the Claude desktop app (Code tab), so you can watch it work. Sign in to the pod there once (SSO/MFA); the pane keeps the session. The agent never types passwords or one-time codes.
-- **Default:** every change that has a Fusion screen is done click by click in the pane. REST / FSM CSV / FBDI are still used for reads, backups, verification, bulk loads and scheduled processes, or when you ask for "API / CSV".
+When you ask to watch, the agent uses the **Claude browser pane** in the Claude desktop app (Code tab). Sign in to the pod there once (SSO/MFA); the pane keeps the session. The agent never types passwords or one-time codes.
+- **Default:** the agent works on the backend (REST / FSM CSV / FBDI) and does not open the pane. Say "show me in the browser" to watch a change click by click; tasks with no API path (e.g. approval rules) also open the pane.
 - Optional: to stop Claude Code asking before each pane action, allow the `mcp__Claude_Browser__*` tools in your own settings.
 - The pane exists only in the Claude desktop app; in the plain CLI the agent falls back to A/B/C.
 
@@ -120,7 +120,7 @@ Open Claude Code in this folder and write a request. The agent replies in Egypti
 - `CLAUDE.md` keeps context small: `fields=` on every REST read, page structure instead of screenshots, logs saved to files instead of pasted.
 
 ### Slash commands
-- `/agent on` — opens the connection form (URL / user / password), connects, and opens Fusion in the browser pane.
+- `/agent on` — opens the connection form (URL / user / password) and connects. Fusion opens in the pane only when you ask to watch.
 - `/agent off` — closes the Oracle connection and the browser pane. Fusion tools refuse to run until `/agent on`.
 
 `/new-supplier` `/new-bu` `/new-location` `/procurement-setup` `/approval-rule` `/new-req` `/new-po` `/p2p-test` `/find` `/env` `/mode` `/export-setup` `/config-doc` `/bulk`

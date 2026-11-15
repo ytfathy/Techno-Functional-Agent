@@ -1,5 +1,5 @@
 ---
-description: Turn the Oracle agent on (connect + open the browser pane) or off (disconnect + close the pane)
+description: Turn the Oracle agent on (connect; backend by default) or off (disconnect + close the pane)
 argument-hint: on | off
 ---
 Argument: $ARGUMENTS
@@ -8,7 +8,7 @@ Argument: $ARGUMENTS
 1. `preview_start` with name `oracle-setup` (connection form in the Claude browser pane). Ask the user to check the instance URL / username / password and press **Save & test** or **Keep current**, then tell you "done". Never ask for the password in chat; never read `.env*`.
 2. When the user says done: `preview_logs` for `oracle-setup` → find the last `SAVED profile=<p> ok=<bool>` or `KEEP profile=<p> ok=<bool>`. If `ok=False`: show the message on the page and stop.
 3. `switch_environment(<p>)` (this also reconnects after `/agent off`), then `env_info`.
-4. `preview_stop` the `oracle-setup` server (the form is no longer needed), then open the pod in the pane: `preview_start` with url `<base_url>/fscmUI/faces/FuseWelcome`. If it shows a sign-in page, ask the user to sign in there.
+4. `preview_stop` the `oracle-setup` server (the form is no longer needed). Do not open Fusion in the pane: the agent works on the backend; the pane opens later only if the user asks to watch.
 5. Reply in 2 lines: env / release / user / mode, and "Agent is ON".
 
 **off**

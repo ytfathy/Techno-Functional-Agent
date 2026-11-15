@@ -17,6 +17,7 @@ def make_client(env: str = "TEST") -> client.FusionClient:
 def fusion(monkeypatch, tmp_path):
     """Active TEST client + respx router rooted at /fscmRestApi/resources/11.13.18.05. No real HTTP."""
     monkeypatch.setenv("ORACLE_AGENT_LOG_DIR", str(tmp_path / "logs"))
+    monkeypatch.setenv("ORACLE_AGENT_CACHE_DIR", str(tmp_path / "cache"))
     monkeypatch.setattr(client.time, "sleep", lambda s: None)
     client.set_client(make_client())
     client._state["mode"] = "confirm"

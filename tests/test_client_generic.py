@@ -149,3 +149,13 @@ def test_smoke_reports_missing_privilege(fusion):
     assert rows["Suppliers"]["result"] == "MISSING PRIVILEGE" and "Supplier" in rows["Suppliers"]["needs"]
     assert rows["Locations"]["result"].startswith("AUTH FAILED")
     assert rows["Purchase orders"]["result"] == "OK"
+
+
+def test_describe_disk_cache_survives_restart(fusion):
+    route = fusion.get("/suppliers/describe").respond(200, json=describe("suppliers", ["Supplier"]))
+    generic.rest_describe("suppliers")
+    generic._describe_cache.clear()  # simulate a new MCP server process
+    assert generic.rest_describe("suppliers")["attributes"] == ["Supplier:string"]
+    assert route.call_count == 1
+    generic.rest_describe("suppliers", refresh=True)
+    assert route.call_count == 2

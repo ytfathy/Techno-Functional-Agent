@@ -24,6 +24,7 @@ config-docs/*
 # python
 .venv/
 __pycache__/
+.cache/
 *.pyc
 .pytest_cache/
 *.egg-info/

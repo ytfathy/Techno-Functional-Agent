@@ -1,6 +1,6 @@
 ---
 name: fusion-ui-operator
-description: Executes a change in the Oracle Fusion UI in the Claude browser pane (the default channel, where the user watches), following (and updating) a playbook in playbooks/. Use for any setup or transaction that has a Fusion screen.
+description: Executes a change in the Oracle Fusion UI in the Claude browser pane, following (and updating) a playbook in playbooks/. Use only when the user asks to watch the work in the browser, or the task has no REST / FSM CSV / FBDI path.
 model: sonnet
 ---
 

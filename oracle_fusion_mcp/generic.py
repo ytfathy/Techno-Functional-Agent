@@ -2,9 +2,13 @@
 from __future__ import annotations
 
 import difflib
+import hashlib
+import json
+import os
+from pathlib import Path
 from typing import Any
 
-from .client import FusionError, audit, get_client, guard_prod, redact, strip_links
+from .client import ROOT, FusionError, audit, get_client, guard_prod, redact, strip_links
 
 STD_ACTIONS = {"get", "create", "update", "delete", "replace", "describe", "upsert"}
 _describe_cache: dict[str, dict] = {}
@@ -46,16 +50,37 @@ def _split(path: str) -> tuple[list[str], list[str]]:
     return head, body[0::2]
 
 
-def _describe_raw(path: str) -> dict:
+def _cache_file(key: str) -> Path:
+    d = Path(os.getenv("ORACLE_AGENT_CACHE_DIR") or ROOT / ".cache" / "describe")
+    return d / (hashlib.sha256(key.encode()).hexdigest()[:24] + ".json")
+
+
+def _describe_raw(path: str, refresh: bool = False) -> dict:
     """Describe of the ROOT resource: Fusion nests full child descriptors inside it
-    (describing a child URL with a parent key does not work)."""
+    (describing a child URL with a parent key does not work).
+    Cached in memory and on disk per pod + release, so later sessions skip the slow download."""
     head, names = _split(path)
     root = "/".join(head + names[:1])
     root = "/" + root if path.startswith("/") else root
-    key = f"{get_client().base}|{root}"
-    if key not in _describe_cache:
-        _describe_cache[key] = get_client().request("GET", f"{root}/describe")
-    return _describe_cache[key]
+    c = get_client()
+    key = f"{c.base}|{c.cfg.get('ORACLE_RELEASE', '')}|{root}"
+    if key in _describe_cache and not refresh:
+        return _describe_cache[key]
+    f = _cache_file(key)
+    if not refresh:
+        try:
+            _describe_cache[key] = json.loads(f.read_text(encoding="utf-8"))
+            return _describe_cache[key]
+        except (OSError, ValueError):
+            pass  # no or unreadable cache file: fetch it
+    data = c.request("GET", f"{root}/describe")
+    _describe_cache[key] = data
+    try:
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(json.dumps(data), encoding="utf-8")
+    except OSError:
+        pass  # cache is an optimisation only
+    return data
 
 
 def _node_for(data: dict, path: str) -> dict:
@@ -89,12 +114,13 @@ def summarize_node(name: str, node: dict) -> dict:
     }
 
 
-def rest_describe(resource_path: str, raw: bool = False) -> dict:
+def rest_describe(resource_path: str, raw: bool = False, refresh: bool = False) -> dict:
     """Read a REST resource's real metadata (attributes, children, finders, custom actions).
     ALWAYS call this before building a payload. resource_path is relative to /fscmRestApi/resources/11.13.18.05/
-    (e.g. 'suppliers', 'suppliers/123/child/sites') or absolute (e.g. '/hcmRestApi/resources/11.13.18.05/locationsV2')."""
+    (e.g. 'suppliers', 'suppliers/123/child/sites') or absolute (e.g. '/hcmRestApi/resources/11.13.18.05/locationsV2').
+    Results are cached on disk per pod + release; refresh=True re-reads from Fusion (e.g. after new flexfields)."""
     try:
-        data = _describe_raw(resource_path)
+        data = _describe_raw(resource_path, refresh)
     except FusionError as e:
         return e.to_dict()
     return data if raw else summarize_node(resource_name(resource_path), _node_for(data, resource_path))

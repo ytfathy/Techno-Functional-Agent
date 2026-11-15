@@ -97,3 +97,9 @@ Tests: **29 passed** (pytest + respx, mocked HTTP only). MCP server verified ove
 Read SPEC.md (the full brief), PROGRESS.md (what is done) and CLAUDE.md. Continue from "Next steps" in PROGRESS.md.
 Do not redo finished phases. Never run a write against the real pod without asking me. After each phase/step, update PROGRESS.md.
 ```
+
+## 2026-11-15 — Backend is the default again; browser pane only on request
+- User asked for speed: the agent works on the backend (A → B → C) by default and does not open the pane. Channel D is used only when the user asks to watch ("show me in the browser") or the task has no API path (e.g. BPM approval rules).
+- Changed: `CLAUDE.md` (tools table, Channels, D row, loop step 3, session start), `.claude/commands/agent.md` (`/agent on` no longer opens Fusion in the pane), `.claude/agents/fusion-ui-operator.md` description, `README.md`. Playbooks kept for D.
+- Not done (proposed, not approved yet): run `config-reviewer` only for high-impact/PROD; shortcuts `create_inventory_org` / `create_subinventory` / `create_item`; investigate the `oracle-fusion` MCP CONNECT_TIMEOUT at session start.
+- 2026-11-15: **describe disk cache added** (`generic._describe_raw`): REST `describe` saved to `.cache/describe/<hash>.json` keyed by pod + `ORACLE_RELEASE` + root resource (git-ignored; `ORACLE_AGENT_CACHE_DIR` overrides). Later sessions skip the download. `rest_describe(..., refresh=True)` re-reads from Fusion (e.g. after new DFF segments). Test added; suite 43 passed. Takes effect after the MCP server restarts.
