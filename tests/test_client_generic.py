@@ -40,6 +40,16 @@ def test_pagination_and_links_stripped(fusion):
     assert out["count"] == 2 and out["items"][0] == {"SupplierId": 1}
 
 
+def test_disconnect_blocks_calls_until_reconnect(fusion):
+    client._state["mode"] = "auto"
+    client.disconnect()
+    with pytest.raises(RuntimeError, match="Agent is off"):
+        client.get_client()
+    assert client.get_mode() == "confirm"
+    client.set_client(make_client())  # what switch_environment does after load_profile
+    assert client.get_client().env_name == "TEST"
+
+
 def test_scim_get_sends_no_adf_params(fusion, monkeypatch):
     seen = {}
     monkeypatch.setattr(client.get_client(), "request",

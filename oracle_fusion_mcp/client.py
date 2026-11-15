@@ -262,10 +262,12 @@ class FusionClient:
 
 # ---------------------------------------------------------------- session state
 
-_state: dict[str, Any] = {"client": None, "mode": "confirm"}
+_state: dict[str, Any] = {"client": None, "mode": "confirm", "off": False}
 
 
 def get_client() -> FusionClient:
+    if _state["off"]:
+        raise RuntimeError("Agent is off (disconnected). Run /agent on (switch_environment) to reconnect.")
     if _state["client"] is None:
         _state["client"] = FusionClient(load_profile(os.getenv("ORACLE_PROFILE", "test")))
     return _state["client"]
@@ -273,6 +275,15 @@ def get_client() -> FusionClient:
 
 def set_client(client: FusionClient | None) -> None:
     _state["client"] = client
+    if client is not None:
+        _state["off"] = False
+
+
+def disconnect() -> None:
+    """Close the HTTP session and block every Fusion call until switch_environment()."""
+    if _state["client"] is not None:
+        _state["client"].http.close()
+    _state.update(client=None, off=True, mode="confirm")
 
 
 def get_mode() -> str:
@@ -291,7 +302,7 @@ def set_mode(mode: str) -> str:
 
 def switch_environment(name: str) -> FusionClient:
     client = FusionClient(load_profile(name))
-    _state["client"] = client
+    set_client(client)
     if client.is_prod:
         _state["mode"] = "confirm"
     return client

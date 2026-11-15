@@ -26,6 +26,13 @@ def switch_environment(name: str) -> dict:
     return {**c.info(), "mode": client.get_mode()}
 
 
+def disconnect() -> dict:
+    """Turn the agent off: close the Oracle connection and refuse every Fusion call until switch_environment
+    (/agent on). Mode resets to confirm."""
+    client.disconnect()
+    return {"connected": False, "mode": client.get_mode()}
+
+
 def set_mode(mode: str) -> dict:
     """Set autonomy mode: 'confirm' (plan + one yes) or 'auto' (DEV/TEST only)."""
     try:
@@ -43,7 +50,7 @@ def log_request(request: str, channel: str, summary: str, ids: dict | None = Non
 
 
 TOOLS = [
-    env_info, switch_environment, set_mode, log_request, smoke.smoke_test,
+    env_info, switch_environment, disconnect, set_mode, log_request, smoke.smoke_test,
     # generic (most important)
     generic.rest_describe, generic.rest_get, generic.rest_create, generic.rest_update, generic.rest_action,
     generic.rest_delete, generic.rest_batch,

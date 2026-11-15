@@ -8,7 +8,9 @@ def find_business_unit(name: str = "", limit: int = 50) -> dict:
     """List business units (finBusinessUnitsLOV). name: part of the BU name (case-sensitive LIKE); empty = all.
     Use it to offer the user the existing BUs when a request names one that does not match."""
     q = f"BusinessUnitName LIKE {q_str('%' + name + '%')}" if name else ""
-    return rest_get("finBusinessUnitsLOV", q=q, limit=limit, all_pages=not name)
+    # list-all keeps 3 fields: all 181 BUs with every field was ~58 KB of context
+    return rest_get("finBusinessUnitsLOV", q=q, limit=limit, all_pages=not name,
+                    fields="" if name else "BusinessUnitId,BusinessUnitName,ActiveFlag")
 
 
 def lookup_values(lookup_type: str, kind: str = "standard") -> dict:

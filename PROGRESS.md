@@ -86,6 +86,12 @@ Tests: **29 passed** (pytest + respx, mocked HTTP only). MCP server verified ove
 - User asked for English replies (memory saved); `CLAUDE.md` still says Egyptian Arabic.
 - **Update (same day): user said "just use the Claude browser pane as default".** Now: every change with a Fusion screen is done in the pane (channel D default); A/B/C only for reads, backups, verification, bulk loads, scheduled processes, or on request. **Playwright removed** from `.mcp.json`, `.claude/settings.json`, `CLAUDE.md`, agent, README and playbooks (`.browser-profile/` stays git-ignored). Takes effect after Claude Code reloads the project.
 
+## 2026-11-15 — /agent on|off
+- New `/agent on` (connection form → `switch_environment` → pod in the pane) and `/agent off` (`disconnect` tool + close pane tabs + stop preview servers). New MCP tool `disconnect` (client `_state["off"]`): every Fusion call raises "Agent is off" until `switch_environment`. Test added (suite 42 passed). `CLAUDE.md` session-start + README updated. MCP now 43 tools; needs a Claude Code reload.
+- `find_business_unit()` with no name now returns 3 fields only (was ~58 KB).
+- Session note: oracle-fusion MCP hit CONNECT_TIMEOUT (30 s) at resume; import takes 2.2 s → cold start, retry via /mcp.
+- Token/speed setup **applied** (user OK): `fusion-ui-operator` `model: sonnet` + interactive `read_page`/`browser_batch`, screenshots scale 0.5; `CLAUDE.md`: delegate pane work to that subagent, "keep context small" rule, **language now English** (was Egyptian Arabic); README "Model and cost". Main session Opus 5.5 effort medium must be set by the user in the app picker (a session can't change its own effort).
+
 ## Resume prompt (paste into a new Claude Code session in this folder)
 ```
 Read SPEC.md (the full brief), PROGRESS.md (what is done) and CLAUDE.md. Continue from "Next steps" in PROGRESS.md.

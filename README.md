@@ -114,7 +114,15 @@ Open Claude Code in this folder and write a request. The agent replies in Egypti
 - «طلعلي كل السبلايرز اللي مالهمش site assignment على BU Egypt Operations» → `/find` (read-only, saved to `reports/` if large).
 - «اعمل Carrier جديد اسمه FastShip وفعّله على الـ inventory org بتاع القاهرة» → `create_carrier` → `add_carrier_ship_method` → `enable_ship_method_on_org`.
 
+### Model and cost
+- Main session: **Opus 5.5, effort medium** (set it in the app's model / effort picker). Planning, safety rules and Oracle errors need Opus; high effort adds little here.
+- Browser work runs in the `fusion-ui-operator` subagent on **Sonnet** (`model: sonnet` in its file), so page reads and screenshots stay out of the main context.
+- `CLAUDE.md` keeps context small: `fields=` on every REST read, page structure instead of screenshots, logs saved to files instead of pasted.
+
 ### Slash commands
+- `/agent on` — opens the connection form (URL / user / password), connects, and opens Fusion in the browser pane.
+- `/agent off` — closes the Oracle connection and the browser pane. Fusion tools refuse to run until `/agent on`.
+
 `/new-supplier` `/new-bu` `/new-location` `/procurement-setup` `/approval-rule` `/new-req` `/new-po` `/p2p-test` `/find` `/env` `/mode` `/export-setup` `/config-doc` `/bulk`
 
 ### Modes
