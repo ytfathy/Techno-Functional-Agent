@@ -1,4 +1,4 @@
-# oracle-scm-agent
+# oracle-techno-functional-agent
 
 **A techno-functional AI consultant for Oracle Fusion Cloud SCM & Procurement.** Open Claude Code in this folder and write a request in English or Arabic. The agent does the work in Fusion itself, the way a senior consultant who covers both sides would:
 
