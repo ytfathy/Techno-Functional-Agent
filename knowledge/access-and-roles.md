@@ -93,3 +93,15 @@ Notes from 26D Security Reference for Procurement (oapcm):
 - Data security context names for SCM roles; procurement agent requirements for the agent user.
 - JWT user assertion token request parameters.
 - Whether a dedicated "Supply Chain Application Administrator" role should replace the SCM job roles for setup (not researched).
+
+## More role codes VERIFIED-ON-POD 2026-11-25 (SCIM Roles, pod fa-eteo)
+| Role | Code |
+|---|---|
+| Cost Accountant | `ORA_CST_COST_ACCOUNTANT_JOB` |
+| Order Manager | `ORA_DOO_ORDER_MANAGER_JOB` |
+| Order Entry Specialist | `ORA_FOM_ORDER_ENTRY_SPECIALIST_JOB` |
+| Order Administrator | `ORA_DOO_ORDER_ADMINISTRATOR_JOB` |
+| Pricing Administrator | `ORA_QP_PRICING_ADMINISTRATOR_JOB` |
+| Shipping Agent | `ORA_WSH_SHIPPING_AGENT_JOB` |
+| Sourcing Project Collaborator | `ORA_PON_SOURCING_PROJECT_COLLABORATOR_ABSTRACT` |
+Data-access contexts seen on the pod: `Business unit` (value = BU name), `Inventory organization` (value = org code), `Reference data set`; Cost Accountant data roles are cost-organization scoped (e.g. "Cost Accountant US Operations (COSTORG)").

@@ -1,7 +1,7 @@
 # oracle-scm-agent — Progress & handoff
 
 > Updated at the end of every phase. To continue in another Claude account/session: open Claude Code in this folder and paste the "Resume prompt" at the bottom.
-> Last update: 2026-11-15 — Phases 1–6 done. **Next work = "Next steps — backlog" below (priority order).** Dated sections after it are history.
+> Last update: 2026-11-25 — Phases 1–6 done; backlog items 1, 2, 4 done and 3 started (see "2026-11-25" section at the end). **Next work = "Next steps — backlog" below (priority order).** Dated sections after it are history.
 
 ## Goal (short)
 An executing AI agent (Claude Code project) that acts as a senior Oracle Fusion Cloud SCM & Procurement consultant. The user writes a request (Arabic/English) and the agent does the setup or transaction in Fusion itself via 4 channels (A REST, B FSM CSV, C FBDI/ESS, D UI in the Claude browser pane — only on request or for UI-only tasks), with safety rules, backups, an audit log and config docs. Full original brief: [SPEC.md](SPEC.md). User guide: [README.md](README.md).
@@ -10,7 +10,7 @@ An executing AI agent (Claude Code project) that acts as a senior Oracle Fusion 
 | Item | Decision |
 |---|---|
 | Fusion release | **26D** |
-| TEST pod | User-filled `.env.test`: an Oracle demo pod, user `hcm_impl`, Basic Auth. Base URL is normalized to the pod root automatically. |
+| TEST pod | User-filled `.env.test` (connection form). **Since 2026-11-25: new demo pod `fa-eteo-saasfademo1`, user `HCM`** (was `fa-etat…`, user `hcm_impl`; everything created before 2026-11-25 — supplier 1501, YT Business Unit, hcm_impl roles — lives on the OLD pod only). Basic Auth. Base URL is normalized to the pod root automatically. |
 | Auth | Basic Auth on TEST. OAuth client credentials is coded, but per the 26D docs it does NOT work for `/fscmRestApi`, `/hcmRestApi` or SCIM (only `/api/...`). Use Basic or JWT user assertion. |
 | Python / SDK | System Python 3.14 in `.venv`; **`mcp>=1.2,<2`** (mcp 2.x renamed FastMCP → pinned to keep FastMCP as the brief asks) |
 | Browser for channel D | Claude desktop app browser pane (`mcp__Claude_Browser__*`). Playwright/Edge removed 2026-11-14. Backend (A/B/C) is the default since 2026-11-15 |
@@ -27,8 +27,8 @@ An executing AI agent (Claude Code project) that acts as a senior Oracle Fusion 
 | 5. Playwright playbooks | DRAFTED | 6 playbooks DRAFT-FROM-DOCS: create-business-unit, assign-business-unit-business-function, configure-procurement-bf, configure-requisitioning-bf, document-styles, approval-rules. **Need a first live run** (the user signs in to Edge once) |
 | 6. commands, subagents, bulk, README | **DONE** | 14 slash commands, 3 subagents, bulk module, README (access setup + verified role codes + examples) |
 
-Tests: **43 passed** (pytest + respx, mocked HTTP only). MCP server: **43 tools** (incl. `disconnect`).
-Writes done on the TEST pod (all with the user's OK): 4 roles + US1 data access for `hcm_impl`; supplier 1501 + address + site CAIRO-TEST (FBDI); BU "YT Business Unit". See the dated sections below and `config-docs/`.
+Tests: **47 passed** (pytest + respx, mocked HTTP only). MCP server: **45 tools** (new: `fbdi_ctl_columns`, `fbdi_import_job`). `knowledge/`: **50 files**.
+Writes done (all with the user's OK): OLD pod — 4 roles + US1 data access for `hcm_impl`; supplier 1501 + address + site CAIRO-TEST (FBDI); BU "YT Business Unit". NEW pod (2026-11-25) — 9 roles + inventory-org data access (8 US1 orgs) for `HCM`. See the dated sections below and `config-docs/security.md`.
 
 ## Key findings that changed the design
 - **Channel B covers almost all setup on 26D.** These tasks have `CSVExportImportSupportedFlag=Y`:
@@ -63,13 +63,13 @@ Rules for whoever continues: read `CLAUDE.md` first. Never write to the pod with
 
 **State at handoff:** agent OFF. The `oracle-fusion` MCP often hits CONNECT_TIMEOUT (30 s) at session start; server import takes ~1.2 s, so it is a cold start: reconnect it from the MCP menu / reload the project, then `/agent on`.
 
-1. **FBDI file builder bug (code, blocks every bulk load).** `fbdi.fbdi_template_columns` / `fbdi_build_zip` take the column order from the XLSM sheet via openpyxl. Oracle loads the CSV in **control-file (.ctl) order**, and openpyxl cannot read Oracle's `.xlsm` reliably (supplier-site load failed until the CSV was rebuilt by hand in ctl order; see `knowledge/channel-c-fbdi-ess.md`).
+1. ✅ **DONE 2026-11-25** — **FBDI file builder bug (code, blocks every bulk load).** `fbdi.fbdi_template_columns` / `fbdi_build_zip` take the column order from the XLSM sheet via openpyxl. Oracle loads the CSV in **control-file (.ctl) order**, and openpyxl cannot read Oracle's `.xlsm` reliably (supplier-site load failed until the CSV was rebuilt by hand in ctl order; see `knowledge/channel-c-fbdi-ess.md`).
    - Fix: read sheet XML with `zipfile` (no openpyxl); take column order from the ctl (SQL*Loader log of a failed load, or Oracle's published controlfiles); let the caller pass an explicit column list.
    - `fbdi_import` / `ess_status`: the import job is a **separate request id (load ReqstId + 1)**, not a child of the load. Add a helper that waits for and reports that import job.
    - Add tests (mocked). Affects: ItemImportTemplate, SupplierSiteImportTemplate, SupplierSiteAssignmentImportTemplate, ASL, on-hand, locators.
-2. **Roles for inventory/item/cost work (pod write — ask the user first).** `hcm_impl` only has the 4 procurement roles → inventory/item/costing writes will 403. Grant via SCIM `PATCH Roles/{id}` members ADD (same method as before, `knowledge/users-roles.md`): Inventory Manager `ORA_INV_INVENTORY_MANAGER_JOB`, Product Data Steward `ORA_EGI_PRODUCT_DATA_STEWARD_JOB`, Cost Accountant (look up the code on the pod), + data access to the inventory orgs. Back up roles first; run `smoke_test` after.
-3. **Inventory / item org flow.** New commands `/new-inv-org` and `/new-item-org` (like `/new-bu`): fixed prerequisite checklist (location, workday/schedule calendar, item master org, reference data set, cost org assignment, interorg parameters) → reads → creates. After the first real run add shortcuts `create_inventory_org`, `create_subinventory`, `create_item` (with duplicate checks + tests). Knowledge: `inventory-organizations.md` (5 UNVERIFIED), `subinventories-locators.md` (3), `item-organizations.md` (2), `items-item-classes.md` (2) — confirm on the pod and clear the flags.
-4. **Missing knowledge areas** (no file in `knowledge/`; use the `oracle-researcher` subagent, 26D docs, cite URLs, then add to `INDEX.md` + `dependencies.md` + `fsm-task-codes.md`). Order:
+2. ✅ **DONE 2026-11-25 on the new pod for user `HCM`** (open: BU data access for the procurement roles, cost-org data access for Cost Accountant — ask the user) — **Roles for inventory/item/cost work (pod write — ask the user first).** `hcm_impl` only has the 4 procurement roles → inventory/item/costing writes will 403. Grant via SCIM `PATCH Roles/{id}` members ADD (same method as before, `knowledge/users-roles.md`): Inventory Manager `ORA_INV_INVENTORY_MANAGER_JOB`, Product Data Steward `ORA_EGI_PRODUCT_DATA_STEWARD_JOB`, Cost Accountant (look up the code on the pod), + data access to the inventory orgs. Back up roles first; run `smoke_test` after.
+3. 🟡 **STARTED 2026-11-25** (commands written; first real run + shortcuts still to do) — **Inventory / item org flow.** New commands `/new-inv-org` and `/new-item-org` (like `/new-bu`): fixed prerequisite checklist (location, workday/schedule calendar, item master org, reference data set, cost org assignment, interorg parameters) → reads → creates. After the first real run add shortcuts `create_inventory_org`, `create_subinventory`, `create_item` (with duplicate checks + tests). Knowledge: `inventory-organizations.md` (5 UNVERIFIED), `subinventories-locators.md` (3), `item-organizations.md` (2), `items-item-classes.md` (2) — confirm on the pod and clear the flags.
+4. ✅ **DONE 2026-11-25** (7 files, merged into INDEX / dependencies / fsm-task-codes; ~95 UNVERIFIED items left inside them) — **Missing knowledge areas** (no file in `knowledge/`; use the `oracle-researcher` subagent, 26D docs, cite URLs, then add to `INDEX.md` + `dependencies.md` + `fsm-task-codes.md`). Order:
    1. Cost Management (cost orgs, cost books, valuation units/structures, cost profiles, cost org relationships) — needed before inventory transactions.
    2. Inventory transactions (misc. issue/receipt, subinventory transfer, interorg transfer, cycle count, physical inventory, min-max, ABC).
    3. Shipping execution (release rules, pick wave, pick confirm, ship confirm, shipping parameters).
@@ -133,3 +133,34 @@ Do not redo finished phases. Never run a write against the real pod without aski
 - Changed: `CLAUDE.md` (tools table, Channels, D row, loop step 3, session start), `.claude/commands/agent.md` (`/agent on` no longer opens Fusion in the pane), `.claude/agents/fusion-ui-operator.md` description, `README.md`. Playbooks kept for D.
 - Not done (proposed, not approved yet): run `config-reviewer` only for high-impact/PROD; shortcuts `create_inventory_org` / `create_subinventory` / `create_item`; investigate the `oracle-fusion` MCP CONNECT_TIMEOUT at session start.
 - 2026-11-15: **describe disk cache added** (`generic._describe_raw`): REST `describe` saved to `.cache/describe/<hash>.json` keyed by pod + `ORACLE_RELEASE` + root resource (git-ignored; `ORACLE_AGENT_CACHE_DIR` overrides). Later sessions skip the download. `rest_describe(..., refresh=True)` re-reads from Fusion (e.g. after new DFF segments). Test added; suite 43 passed. Takes effect after the MCP server restarts.
+
+## 2026-11-25 — Backlog items 1–4 (FBDI fix, roles on the new pod, inv-org commands, 7 knowledge areas)
+- **Pod changed.** The user re-saved the connection form: `.env.test` now points to demo pod `fa-eteo-saasfademo1`, user `HCM` (the old `hcm_impl` password had expired → every call 401). Old-pod objects (supplier 1501 / site CAIRO-TEST, YT Business Unit, the zip for its set assignments) are not on this pod, so backlog item 6 only applies if the user goes back to the old pod.
+- **Item 1 (code) DONE.** `fbdi.py`:
+  - `fbdi_ctl_columns(<.ctl | SQL*Loader .log>)` gives the CSV column order (drops EXPRESSION / CONSTANT fields).
+  - `fbdi_build_zip(data, zip_name, columns)` writes header-less CSVs in that order; `columns` per CSV is a list or a ctl/log path; unknown keys block.
+  - `fbdi_template_columns` reads labels from the sheet XML with `zipfile` (openpyxl removed from fbdi.py); the real `SupplierSiteImportTemplate.xlsm` now opens (200 columns).
+  - `fbdi_import_job(load_request_id)` scans the next request ids and returns the separate import job + status.
+  - Tests added (47 passed). `knowledge/channel-c-fbdi-ess.md` and `/bulk` updated. Takes effect after the MCP server restarts.
+- **Item 2 DONE (user OK, user chose "all SCM roles" + "all US1 BU orgs").** User `HCM` on the new pod, SCIM `PATCH Roles/{id}` members ADD:
+  - Roles: Inventory Manager, Product Data Steward, Cost Accountant, Supplier Manager, Buyer, Procurement Requester, Procurement Application Administrator, Integration Specialist, Functional Setups User (122 → 131 roles).
+  - Data access: `dataSecurities` Inventory Manager × `Inventory organization` 001, 002, 003, 004, 005, 020, 030, M001.
+  - Backup: `backups/2026-11-25/security-HCM-roles-before.json`.
+  - Verified: SCIM read, `dataSecurities` read by id, `smoke_test` 13/13.
+  - Logged in `config-docs/security.md` + `log_request`.
+  - **Open (ask the user):** BU data access for the procurement roles (`Business unit` = US1 Business Unit, as on the old pod); cost-org data access for Cost Accountant.
+- **Item 3 STARTED.** `.claude/commands/new-inv-org.md` and `new-item-org.md`: 9-point prerequisite checklist (location, Materials Management BU, legal entity, profit center BU, schedule, item master, sets, cost org, duplicates) → plan → backup → create (`inventoryOrganizations` POST or `copyInventoryOrganizations`) → verify. Shortcuts `create_inventory_org` / `create_subinventory` / `create_item` come after the first real run.
+- **Item 4 DONE.** 3 oracle-researcher batches (Sonnet) wrote:
+  - `cost-management.md`, `inventory-transactions.md`
+  - `shipping-execution.md`, `order-management.md`
+  - `financial-orchestration.md`, `calendars-flexfields.md`, `sourcing-negotiations.md`
+
+  All are PARTIAL with UNVERIFIED items marked. Merged into `INDEX.md` (7 rows) and `dependencies.md` (6 chains).
+  - Verified on the pod: 43 TaskCodes added to `fsm-task-codes.md`. **Cost Accounting, Supply Chain Financial Orchestration, Shipping, Order Management and flexfield setup tasks are all CSV-enabled → channel B**, although the docs only describe the UI. The one exception is Manage Shipping Document Job Set Rules (CSV N).
+  - 9 more role codes confirmed (Order Manager, Order Entry Specialist, Order Administrator, Pricing Administrator, Shipping Agent, Sourcing Project Collaborator…) in `access-and-roles.md`.
+- **Next (priority):**
+  1. Ask the user about the 2 open data-access items above.
+  2. First real `/new-inv-org` on TEST (with the user's OK), then the `create_inventory_org` / `create_subinventory` / `create_item` shortcuts + tests.
+  3. First FSM CSV export of a cost task (e.g. `CST_MANAGE_COST_ORGANIZATIONS`) to learn the CSV structure.
+  4. Backlog item 5 (verify the UI playbooks).
+  5. Reduce UNVERIFIED items in the 7 new files with pod reads.

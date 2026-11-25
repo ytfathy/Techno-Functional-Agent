@@ -65,3 +65,21 @@ Item master org → item class (UI / B `EGO_MANAGE_ITEM_CLASSES`) → UOMs (`uom
 
 ## Carrier
 Lookups WSH_SERVICE_LEVELS / WSH_MODE_OF_TRANSPORT → **carrier** → **shipping method** (service level + mode) → **organization association** (inventory org) — `carriers.md`.
+
+## Cost Accounting → inventory transactions (added 2026-11-25, `cost-management.md`, `inventory-transactions.md`)
+Legal entity + primary ledger + accounting calendar → profit center BU → inventory org + item master + items enabled in the org → subinventories / locators / UOMs / account alias + locator KFF → **cost elements** → **valuation structure** → **cost book** → **cost organization** → **cost organization relationships** (cost org + item validation org + inventory orgs with Effective Start Date + cost books on the primary ledger; earlier-dated transactions will not cost) → valuation units (if below org level) → **cost profiles** → **default cost profile** (New Item Profile Creation = Automatic) → interorg parameters / transaction reasons → post transaction (`inventoryTransactions`, or staged + `processByHeader`) → Transfer Transactions from Inventory to Costing → Create Cost Accounting Distributions → Create Accounting → GL. All cost setup tasks are channel B (`CST_*`, fsm-task-codes.md).
+
+## Shipping execution (`shipping-execution.md`)
+Items + inventory org + subinventories/locators + UOM → carriers + ship methods + document sequences → Manage Release Sequence Rules → Manage Ship Confirm Rules → Manage Pick Slip Grouping Rules → shipping document job sets → Manage Shipping Parameters → **Manage Pick Wave Release Rules** → pick wave (`pickWaves`) → pick confirm (`pickTransactions`) → ship confirm (`shipmentTransactionRequests` + Perform Shipping Transactions).
+
+## Order Management (`order-management.md`)
+Ledger / LE / BU / sets / customers / Receivables → items, inventory org, shipping setup (above) → Global Order Promising (planning data collection, sourcing rules, assignment set, ATP rules, profile values, server refresh) → Pricing (profile, segment, strategy, price/cost/discount/shipping charge lists, Assign Pricing Strategies) → Manage Order Management Parameters → order types (Manage Order Lookups `ORA_DOO_ORDER_TYPES`) + numbering → orchestration process definition (deploy + assignment) → sales order (`salesOrdersForOrderHub`, submit via `salesOrderActionRequests` `ORA_FOM_SUBMIT_ORDER`) → pick / ship / invoice.
+
+## Supply Chain Financial Orchestration (`financial-orchestration.md`)
+Legal entities, ledgers, BUs incl. profit center BU → trade inventory orgs → customers + suppliers/sites for intercompany invoices (Financials objects first) → Receivables invoice/credit memo types + payment terms → service item + item validation org → System Options → Documentation and Accounting Rules → Transfer Pricing Rules → Profit Center BU Party Relationship → Qualifiers → Financial Flows → Drop Ship Financial Flows (all channel B `ORA_FOS_*`).
+
+## Calendars & flexfields (`calendars-flexfields.md`)
+Schedule: shifts → workday pattern → schedule (+ exceptions) → active schedule → inventory org parameter `ScheduleId` (Manage Facility Schedules `RCS_MANAGE_FACILITY_SCHEDULES`). Flexfield: value set (+ values) → segments → **Deploy** (UI) → Synchronize Flexfields with Business Objects (if REST does not show the new attribute) → `rest_describe(..., refresh=True)`.
+
+## Sourcing negotiation (`sourcing-negotiations.md`)
+Procurement BU with sourcing in Configure Procurement BF → negotiation style (+ template) → suppliers with sites + contacts → Category Manager user + procurement agent → approval rules (if enabled) → `supplierNegotiations` (CreateNegotiation → lines → suppliers → ValidateAndPublishNegotiation) → responses → award (`supplierNegotiationAwards`).

@@ -41,6 +41,13 @@ Start every request here. Then `dependencies.md` for prerequisites, `fsm-task-co
 | REST mechanics (describe, q, actions, batch, errors) | rest-api-conventions.md | — |
 | FSM CSV mechanics | channel-b-fsm-csv.md, fsm-task-codes.md | B |
 | FBDI / ESS mechanics, templates, UCM accounts | channel-c-fbdi-ess.md | C |
+| Supply Chain Financial Orchestration (intercompany flows, transfer pricing) | financial-orchestration.md | B (`ORA_FOS_*`) / A read-only events |
+| Workday / facility schedules, flexfields (DFF/EFF/KFF), value sets, deploy | calendars-flexfields.md | B / A `valueSets` values / D deploy |
+| Sourcing negotiations (RFQ/RFI/auction, responses, award) | sourcing-negotiations.md | A `supplierNegotiations` |
+| Cost Accounting setup (cost orgs, books, valuation, cost profiles, standard costs) | cost-management.md | B (`CST_*`) / A `standardCosts`, `itemCosts` / C standard cost import |
+| Inventory transactions (misc issue/receipt, transfers, cycle count, physical inventory, min-max, ABC) | inventory-transactions.md | A `inventoryTransactions`, `inventoryStagedTransactions` / C |
+| Shipping execution (release rules, pick wave, pick confirm, ship confirm) | shipping-execution.md | B (`WSH_*`) / A `pickWaves`, `pickTransactions`, `shipmentTransactionRequests` |
+| Order Management (order types, orchestration, pricing, GOP, sales orders) | order-management.md | B / A `salesOrdersForOrderHub`, `salesOrderActionRequests` / C |
 | Oracle error codes | error-codes.md | — |
 
 Not in this list → research it first (oracle-researcher subagent) and add a file + a row here.

@@ -129,16 +129,75 @@ def _template(path):
     wb.save(path)
 
 
-def test_fbdi_build_zip_column_order(tmp_path, monkeypatch):
-    monkeypatch.setattr(fbdi, "WORK", tmp_path / "work")
+CTL = """LOAD DATA
+APPEND
+INTO TABLE POZ_SUPPLIER_SITES_INT
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' TRAILING NULLCOLS
+(
+IMPORT_ACTION,
+VENDOR_NAME,
+INVOICE_CHANNEL,
+BATCH_ID,
+ATTRIBUTE_DATE1 "to_date(:ATTRIBUTE_DATE1, 'YYYY/MM/DD')",
+"CREATION_DATE" expression "systimestamp",
+LOAD_REQUEST_ID constant '#LOADREQUESTID#'
+)
+"""
+
+LOADER_LOG = """   Column Name                  Position   Len  Term Encl Datatype
+------------------------------ ---------- ----- ---- ---- ---------------------
+IMPORT_ACTION                       FIRST     *   ,  O(") CHARACTER
+VENDOR_NAME                          NEXT     *   ,  O(") CHARACTER
+CREATION_DATE                                           EXPRESSION
+"""
+
+
+def test_template_labels_read_without_openpyxl(tmp_path):
     t = tmp_path / "t.xlsx"
     _template(t)
     assert fbdi.fbdi_template_columns(str(t))["sheets"] == {"POZ_SUPPLIERS_INT": ["Import Action", "Supplier Name", "Tax Registration Number"]}
-    out = fbdi.fbdi_build_zip(str(t), {"POZ_SUPPLIERS_INT": [{"Supplier Name": "Nile", "Import Action": "CREATE"}]}, "sup")
+
+
+def test_real_supplier_site_template_opens():
+    real = fbdi.ROOT / "fbdi" / "templates" / "SupplierSiteImportTemplate.xlsm"
+    if not real.exists():
+        return  # template is git-ignored; only present after a download
+    sheets = fbdi.fbdi_template_columns(str(real))["sheets"]
+    assert sheets and all(len(cols) > 3 for cols in sheets.values())
+
+
+def test_ctl_and_loader_log_column_order(tmp_path):
+    (tmp_path / "s.ctl").write_text(CTL)
+    (tmp_path / "s.log").write_text(LOADER_LOG)
+    assert fbdi.fbdi_ctl_columns(str(tmp_path / "s.ctl"))["columns"] == [
+        "IMPORT_ACTION", "VENDOR_NAME", "INVOICE_CHANNEL", "BATCH_ID", "ATTRIBUTE_DATE1"]
+    assert fbdi.fbdi_ctl_columns(str(tmp_path / "s.log"))["columns"] == ["IMPORT_ACTION", "VENDOR_NAME"]
+
+
+def test_fbdi_build_zip_uses_ctl_order(tmp_path, monkeypatch):
+    monkeypatch.setattr(fbdi, "WORK", tmp_path / "work")
+    (tmp_path / "s.ctl").write_text(CTL)
+    rows = {"PozSupplierSitesInt.csv": [{"BATCH_ID": "B1", "VENDOR_NAME": "Nile, Co", "IMPORT_ACTION": "CREATE"}]}
+    out = fbdi.fbdi_build_zip(rows, "sites", {"PozSupplierSitesInt.csv": str(tmp_path / "s.ctl")})
     with zipfile.ZipFile(out["zip"]) as z:
-        assert z.read("PozSuppliersInt.csv").decode() == "CREATE,Nile,\n"
-    bad = fbdi.fbdi_build_zip(str(t), {"POZ_SUPPLIERS_INT": [{"Suplier": "x"}]}, "bad")
-    assert bad["blocked"]
+        assert z.read("PozSupplierSitesInt.csv").decode() == 'CREATE,"Nile, Co",,B1,\n'
+    explicit = fbdi.fbdi_build_zip({"A.csv": [{"Y": 2, "X": 1}]}, "a", {"A.csv": ["X", "Y"]})
+    with zipfile.ZipFile(explicit["zip"]) as z:
+        assert z.read("A.csv").decode() == "1,2\n"
+    assert fbdi.fbdi_build_zip({"A.csv": [{"Z": 1}]}, "b", {"A.csv": ["X"]})["blocked"]
+    assert fbdi.fbdi_build_zip({"A.csv": [{"X": 1}]}, "c", {})["blocked"]
+
+
+def test_fbdi_import_job_finds_separate_request(fusion):
+    def details(name):
+        return httpx.Response(200, json={"items": [{"RequestStatus": json.dumps({"JOBS": {"JOBNAME": name}})}]})
+    ok = httpx.Response(200, json={"items": [{"RequestStatus": "SUCCEEDED"}]})
+    fusion.get("/erpintegrations").mock(side_effect=[ok, details("Load File to Interface"),
+                                                     ok, details("Import Supplier Sites"),
+                                                     ok, details("Upload Interface Error and Job Output File to UCM")])
+    out = fbdi.fbdi_import_job(100, look_ahead=3)
+    assert out["import_request_id"] == 102
+    assert [r["job"] for r in out["next_requests"]][1] == "Import Supplier Sites"
 
 
 def test_fbdi_import_dry_run_account(fusion, tmp_path):

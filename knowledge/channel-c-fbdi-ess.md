@@ -131,6 +131,8 @@ ESS job paths (NOT on docs.oracle.com — resolve at runtime from Manage Job Def
 - Supplier imports (VERIFIED for sites; others same package per community sources): `/oracle/apps/ess/prc/poz/supplierImport` with `ImportSuppliers`, `ImportSupplierAddresses`, `ImportSupplierSites`, `ImportSupplierSiteAssignments`, `ImportSupplierContacts`.
 - Others (Import Orders, Blanket, Contract, Requisitions, supplier sites/contacts/addresses/assignments, Item Import, Manage Receiving Transactions): unknown.
 
+**MCP tools (fixed 2026-11-25):** `fbdi_ctl_columns(<.ctl or SQL*Loader .log>)` → ordered column list; `fbdi_build_zip(data, zip_name, columns)` writes header-less CSVs in that order (data keyed by CSV file name, rows keyed by ctl column names; unknown keys block); `fbdi_template_columns` reads template labels from the sheet XML (no openpyxl; for meaning only, not order); after `fbdi_import`, `fbdi_import_job(load ReqstId)` finds the separate import request and its status.
+
 Preferred technique for the MCP: `uploadFileToUCM` → `submitESSJobRequest` InterfaceLoaderController (load) → poll → `submitESSJobRequest` with the product import job → poll → `ESSJobExecutionDetailsRF` on the import request. Use `importBulkData` once the JobName/ParameterList for that object is confirmed in the pod.
 
 ## How to verify

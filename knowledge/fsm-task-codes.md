@@ -43,3 +43,56 @@
 
 ## Sources
 - Live pod: `GET /fscmRestApi/resources/11.13.18.05/setupTasks?q=TaskName LIKE '%…%'` (see knowledge/channel-b-fsm-csv.md for the API docs).
+
+## Added 2026-11-25 (verified on the new TEST pod fa-eteo via `fsm_find_task`)
+| Task name | TaskCode | CSV (channel B) |
+|---|---|---|
+| Manage Supply Chain Financial Orchestration System Options | ORA_FOS_MANAGE_SYSTEM_OPTIONS | Y |
+| Manage Supply Chain Financial Orchestration Documentation and Accounting Rules | ORA_FOS_DEFINE_TRADE_AND_ACCOUNTING_RULES | Y |
+| Manage Supply Chain Financial Orchestration Transfer Pricing Rules | ORA_FOS_DEFINE_TRANSFER_PRICING_RULES | Y |
+| Manage Profit Center Business Unit Party Relationship | ORA_FOS_DEFINE_PROFIT_CENTER_BUSINESS_UNIT_PARTY_RELATIONSHIP | Y |
+| Manage Supply Chain Financial Orchestration Qualifiers | ORA_FOS_MANAGE_TRADE_QUALIFIER | Y |
+| Manage Supply Chain Financial Orchestration Flows | ORA_FOS_MANAGE_SUPPLY_CHAIN_FINANCIAL_TRADE_AGREEMENTS | Y |
+| Manage Drop Ship Financial Flows | ORA_FOS_MANAGE_DROP_SHIP_AGREEMENTS | Y |
+| Manage Facility Schedules | RCS_MANAGE_FACILITY_SCHEDULES | Y |
+| Manage Plant Parameters | ORA_RCS_MANAGE_PLANT_PARAMETERS | Y |
+| Manage Descriptive Flexfields | FND_MANAGE_DESCRIPTIVE_FLEXFIELDS | Y |
+| Manage Extensible Flexfields | FND_MANAGE_EXTENSIBLE_FLEXFIELDS | Y |
+| Manage Key Flexfields | FND_MANAGE_KEY_FLEXFIELDS | Y |
+| Manage Value Sets | FND_MANAGE_VALUE_SETS | Y |
+| Manage Inventory Descriptive Flexfields | INV_MANAGE_INVENTORY_DESCRIPTIVE_FLEXFIELDS | Y |
+| Manage Inventory Locator Key Flexfield | INV_MANAGE_INVENTORY_LOCATOR_KEY_FLEXFIELD | Y |
+| Deploy Item Extensible Flexfields | EGO_DEPLOY_EFFS | Y |
+
+Note: Supply Chain Financial Orchestration setup is CSV-enabled (channel B), although the docs only describe the UI. Flexfield *deploy* stays a UI action even when the segment setup is exported/imported by CSV.
+
+### Cost, inventory transactions, shipping, order management (added 2026-11-25, same pod)
+| Task name | TaskCode | CSV (channel B) |
+|---|---|---|
+| Manage Cost Organizations | CST_MANAGE_COST_ORGANIZATIONS | Y |
+| Manage Cost Books | CST_MANAGE_COST_BOOKS | Y |
+| Manage Cost Organization Relationships | CST_MANAGE_COST_ORGANIZATION_RELATIONSHIPS | Y |
+| Manage Valuation Structures | CST_MANAGE_VALUATION_STRUCTURES | Y |
+| Manage Valuation Units | CST_MANAGE_VALUATION_UNITS | Y |
+| Manage Cost Profiles | CST_MANAGE_COST_PROFILES | Y |
+| Manage Default Cost Profiles | CST_MANAGE_DEFAULT_COST_PROFILES | Y |
+| Manage Item Cost Profiles | CST_MANAGE_ITEM_COST_PROFILE | Y |
+| Manage Cost Elements | CST_MANAGE_COST_ELEMENTS | Y |
+| Manage Account Aliases | INV_MANAGE_ACCOUNT_ALIASES | Y |
+| Manage Item Transaction Defaults | INV_MANAGE_ITEM_TRANSACTION_DEFAULTS | Y |
+| Manage Material Statuses | INV_MANAGE_MATERIAL_STATUSES | Y |
+| Manage ABC Classes | INV_MANAGE_ABC_CLASSES | Y |
+| Manage ABC Classification Sets | INV_MANAGE_ABC_CLASSIFICATION_SETS | Y |
+| Manage ABC Assignment Groups | INV_MANAGE_ABC_ASSIGNMENT_GROUPS | Y |
+| Manage Release Sequence Rules | WSH_MANAGE_RELEASE_SEQUENCE_RULES | Y |
+| Manage Ship Confirm Rules | WSH_MANAGE_SHIP_CONFIRM_RULES | Y |
+| Manage Pick Slip Grouping Rules | INV_MANAGE_PICK_SLIP_GROUPING_RULES | Y |
+| Manage Pick Wave Release Rules | WSH_MANAGE_PICK_WAVE_RELEASE_RULES | Y |
+| Manage Shipping Parameters | WSH_MANAGE_SHIPPING_PARAMETERS | Y |
+| Manage Shipping Zones | WSH_MANAGE_SHIPPING_ZONES | Y |
+| Manage Shipping Document Job Set Rules | ORA_MANAGE_SHIPPING_DOCUMENT_JOB_SET_RULES | N |
+| Manage Orchestration Process Definitions | DOO_MANAGE_ORCHESTRATION_PROCESS_DEFINITIONS | Y |
+| Manage Order Management Parameters | ORA_FOM_MANAGE_ORDER_MANAGEMENT_SYSTEM_PARAMETERS | Y |
+| Manage Order Lookups | DOO_MANAGE_ORCHESTRATION_LOOKUPS | Y |
+
+Notes: Cost Accounting setup (cost orgs, books, valuation, profiles) is CSV-enabled → channel B, although the docs show only the UI. "Manage Transaction Source Types" / "Manage Transaction Reasons" not found under those names (search shorter names). Manage Shipping Document Job Set Rules = CSV N → channel D.
