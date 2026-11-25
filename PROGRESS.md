@@ -216,3 +216,6 @@ Do not redo finished phases. Never run a write against the real pod without aski
   3. Create the SQL runner (ask first), then first `bi_sql`.
   4. Read the BI role codes on the pod and add them to `security.ROLE_MAP` (`xmlpserver`, `bpm`).
   5. Reduce UNVERIFIED items.
+
+## 2026-11-25 — README rewritten as techno-functional
+- README.md now presents the agent as functional + technical. Structure: two-sides table; coverage tables (functional areas | technical areas with tools); channels with functional and technical use; examples split functional / technical; commands grouped Session / Functional / Technical; roles split functional / technical; one-time technical setup (SQL runner, FBDI templates); safety incl. self-grant and read-only technical work; updated project layout (bi.py, workflow.py, security.py). Fixed stale "42 tools" → 58.
