@@ -11,3 +11,10 @@ High-impact. Follow the CLAUDE.md loop with `knowledge/approvals.md` and `playbo
 4. Back up (screenshot + rule text), execute via fusion-ui-operator, verify by reopening.
 5. Functional test: create a test requisition/PO that meets the condition (`/new-req`), submit it, and check the approval routing; report who it went to.
 6. config-docs/approvals.md; `log_request`; update the playbook if the UI differed.
+
+Technical side (`knowledge/tech-approvals-workflow.md`): rules and groups have no API (channel D). Test and troubleshoot with the API:
+- `wf_tasks(keyword=<doc number>)` / `wf_task(<n>)` show who the test document was routed to, with history.
+- `wf_tasks(assignment='ADMIN', status='ERRORED')` finds faulted approvals.
+- `purchaseRequisitions/{id}/action/getApprovalWorkflowStatus` and `retrieveCurrentApprovers` return the approval status and current approvers of a requisition.
+- PO history comes from `purchasingDocumentHistoryDetails` → `documentVersionActions`.
+- Moving rules pod-to-pod uses SOA Composer export/import (UI).

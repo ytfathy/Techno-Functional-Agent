@@ -10,6 +10,7 @@ import time
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
+from xml.etree import ElementTree as ET
 
 import httpx
 from dotenv import dotenv_values
@@ -250,6 +251,21 @@ class FusionClient:
             except ValueError:
                 pass
         return data
+
+    def soap(self, path: str, envelope: str, timeout: float = 300, soap11: bool = False) -> ET.Element:
+        """POST a SOAP envelope (1.2 by default; soap11=True for BIP v2 services). Returns the parsed response root.
+        HTTP errors and SOAP Faults raise FusionError with the fault text. Never retried (may be a write)."""
+        self.http.cookies.clear()
+        ctype = {"Content-Type": "text/xml; charset=UTF-8", "SOAPAction": '""'} if soap11 else \
+            {"Content-Type": "application/soap+xml; charset=UTF-8"}
+        resp = self.http.post(self.url(path), content=envelope.encode("utf-8"), timeout=timeout,
+                              headers={**self._auth(), **ctype})
+        text = resp.text
+        if resp.status_code >= 400 or "Fault>" in text[:5000]:
+            m = re.search(r"<(?:\w+:)?(?:Text|faultstring)[^>]*>(.*?)</", text, re.S)
+            raise FusionError(resp.status_code, (m.group(1) if m else text[:500]).strip(),
+                              sorted(set(ERROR_CODE_RE.findall(text))), str(resp.request.url))
+        return ET.fromstring(resp.content)
 
     # -- writes (callers must apply dry-run / PROD guard first; see generic.write)
     def action(self, item_path: str, name: str, params: dict | None = None) -> Any:

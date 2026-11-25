@@ -48,6 +48,12 @@ Start every request here. Then `dependencies.md` for prerequisites, `fsm-task-co
 | Inventory transactions (misc issue/receipt, transfers, cycle count, physical inventory, min-max, ABC) | inventory-transactions.md | A `inventoryTransactions`, `inventoryStagedTransactions` / C |
 | Shipping execution (release rules, pick wave, pick confirm, ship confirm) | shipping-execution.md | B (`WSH_*`) / A `pickWaves`, `pickTransactions`, `shipmentTransactionRequests` |
 | Order Management (order types, orchestration, pricing, GOP, sales orders) | order-management.md | B / A `salesOrdersForOrderHub`, `salesOrderActionRequests` / C |
+| TECH: BI Publisher reports, data models, SQL analysis, ESS report jobs, SCM tables | tech-bi-publisher.md | A `bi_run_report` / `bi_sql` / `bi_deploy_object` |
+| TECH: OTBI subject areas, BICC extracts | tech-otbi-bicc.md | D (OTBI UI) / C (BICC ESS) |
+| TECH: approval workflow tasks, BPM REST, Transaction Console, notification templates | tech-approvals-workflow.md | A `wf_*` / D rules |
+| TECH: sandboxes, VB Studio, Application Composer, Alerts Composer | tech-extensions.md | D |
+| TECH: integrations — SOAP services, business events, HDL, OIC, BICC vs BIP vs REST | tech-integrations.md | A `soap_call` / C |
+| TECH: Security Console, custom roles, security reports, audit, 403 troubleshooting | tech-security.md | A role tools / D custom roles |
 | Oracle error codes | error-codes.md | — |
 
 Not in this list → research it first (oracle-researcher subagent) and add a file + a row here.

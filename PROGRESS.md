@@ -187,3 +187,32 @@ Do not redo finished phases. Never run a write against the real pod without aski
     - Add-only; no loops.
   - 3 more tests, suite **57 passed**.
   - The mapping is best-known: if a 403 survives the grant, use `find_role` and the area's knowledge file.
+
+## 2026-11-25 — Techno-functional agent (user request: "make the agent techno-functional: analysis, reports, approval rules, everything a technical consultant does")
+- **Research** (3 oracle-researcher batches, Sonnet; all PARTIAL, UNVERIFIED marked) wrote 6 files, now in `INDEX.md` as "TECH:" rows:
+  - `knowledge/tech-bi-publisher.md`, `tech-otbi-bicc.md`, `tech-approvals-workflow.md`
+  - `tech-extensions.md`, `tech-integrations.md`, `tech-security.md`
+- **Key facts:**
+  - BIP `ExternalReportWSSService.runReport` and `v2/CatalogService` (uploadObject / getFolderContents; Fusion path UNVERIFIED).
+  - BPM REST `/bpm/api/4.0/tasks` (list / act / history). **No API** for approval rules or groups, sandboxes, VB Studio, custom roles, or ESS job definitions → channel D.
+  - SOAP `PurchaseOrderServiceV2`, `SupplierServiceV2`. HDL REST `dataLoadDataSets`. BI role codes are not published (read them on the pod).
+- **New code (MCP 58 tools, tests 66 passed, all mocked):**
+  - `client.soap()` handles SOAP 1.2 (and 1.1 for BIP v2) with fault parsing.
+  - `bi.py`:
+    - `bi_run_report` saves CSV output masked.
+    - `bi_sql` is read-only: SELECT/WITH only, DML/DDL/PL/SQL blocked, ROWNUM cap, base64 into one runner report, results masked.
+    - `bi_catalog_list`.
+    - `bi_deploy_object` writes under /Custom only, dry run + PROD guard, and never logs credentials.
+  - `workflow.py`: `wf_tasks`, `wf_task`, `wf_task_action` (dry run, REASSIGN/DELEGATE need a user).
+  - `generic.soap_call`: any SOAP service; read ops (get*/find*/run*/list*…) run directly, writes dry-run first.
+- **Agent:**
+  - CLAUDE.md persona is now techno-functional, with a tools table and "Technical work rules".
+  - New commands `/sql`, `/report`, `/analyze`; `/approval-rule` gains the technical test/troubleshoot steps.
+  - New playbook `playbooks/bi-sql-runner.md` (one-time runner setup; needs the user's OK — it can read any table).
+  - README gets a "Techno-functional" section.
+- **Not done / next:**
+  1. Restart the MCP server.
+  2. `/agent on`, then verify live (read-only): `?wsdl` of ExternalReportWSSService + CatalogService, run a seeded report, `wf_tasks`.
+  3. Create the SQL runner (ask first), then first `bi_sql`.
+  4. Read the BI role codes on the pod and add them to `security.ROLE_MAP` (`xmlpserver`, `bpm`).
+  5. Reduce UNVERIFIED items.

@@ -123,6 +123,20 @@ Open Claude Code in this folder and write a request. The agent replies in Englis
 - Browser work runs in the `fusion-ui-operator` subagent on **Sonnet** (`model: sonnet` in its file), so page reads and screenshots stay out of the main context.
 - `CLAUDE.md` keeps context small: `fields=` on every REST read, page structure instead of screenshots, logs saved to files instead of pasted.
 
+### Techno-functional (technical consultant work)
+The agent also does the technical consultant's work:
+- **Reports:** `/report` runs, builds or schedules BI Publisher reports.
+- **Analysis:** `/sql` runs read-only SQL on Fusion tables and returns masked results in `reports/`. `/analyze` finds root causes: setup gaps, data checks, stuck approvals, failed imports.
+- **Approval workflow:** `wf_*` tools list, read, approve, reject or reassign tasks and find faulted approvals. Approval rules themselves are UI-only (`/approval-rule`).
+- **Integrations:** `soap_call` covers any Fusion SOAP service; FBDI / ESS and HDL by REST.
+- **Security:** role and data-access tools, with a self-grant when a job hits 403.
+
+One-time setup for `/sql`: a private "SQL runner" report in the BI catalog (`playbooks/bi-sql-runner.md`). It needs your OK, because it can read any table.
+Examples:
+- «طلعلي كل الـ POs اللي approved ومفيش لها receipt على US1 من أول الشهر»
+- «ليه الريكوزيشن 1001 واقفة في الـ approval؟»
+- «اعمل report بالسبلايرز اللي مالهمش bank account»
+
 ### Slash commands
 - `/agent on` — opens the connection form (URL / user / password) and connects. Fusion opens in the pane only when you ask to watch.
 - `/agent off` — closes the Oracle connection and the browser pane. Fusion tools refuse to run until `/agent on`.

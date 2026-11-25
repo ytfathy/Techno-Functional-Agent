@@ -268,3 +268,41 @@ def rest_batch(parts: list[dict], dry_run: bool = True, confirm_prod: str = "") 
     return write("batch", "POST", f"{FSCM}/", {"parts": parts}, dry_run=dry_run, confirm_prod=confirm_prod,
                  validate=False, headers={"Content-Type": "application/vnd.oracle.adf.batch+json"},
                  extra_preview={"part_count": len(parts)})
+
+
+READ_OPS = ("get", "find", "run", "list", "download", "describe", "search", "query")
+
+
+def soap_call(service_path: str, envelope_xml: str, read_only: bool = False, dry_run: bool = True,
+              confirm_prod: str = "") -> dict:
+    """Call ANY Fusion SOAP web service (SOAP 1.2), e.g. service_path='/fscmService/PurchaseOrderServiceV2' or
+    '/xmlpserver/services/v2/CatalogService'. envelope_xml = the full soap:Envelope. Prefer business REST when it exists.
+    read_only=True runs at once, but only for operations named get*/find*/run*/list*/download*/describe*/search*/query*;
+    anything else is a write: dry run first, PROD guard, audit. Returns the response XML (first 20 000 chars)."""
+    import re
+    from xml.etree import ElementTree as ET
+
+    try:
+        body = next(e for e in ET.fromstring(envelope_xml).iter() if e.tag.endswith("}Body") or e.tag == "Body")
+        op = re.sub(r"^\{.*\}", "", list(body)[0].tag)
+    except (ET.ParseError, StopIteration, IndexError) as e:
+        return {"error": True, "message": f"envelope_xml is not a SOAP envelope with a body operation: {e}"}
+    client = get_client()
+    preview = {"env": client.env_name, "operation": f"soap:{op}", "url": client.url(service_path), "envelope": redact(envelope_xml)}
+    is_read = op.lower().startswith(READ_OPS)
+    if read_only and not is_read:
+        return {"blocked": True, "reason": f"operation {op!r} is not a read operation; call with read_only=False (dry run first)", **preview}
+    if not read_only:
+        if dry_run:
+            return {"dry_run": True, **preview}
+        guard_prod(confirm_prod)
+    try:
+        root = client.soap(service_path, envelope_xml)
+    except FusionError as e:
+        if not read_only:
+            audit({"event": "error", **preview, "error": e.to_dict()})
+        return {**e.to_dict(), "operation": op}
+    text = ET.tostring(root, encoding="unicode")
+    if not read_only:
+        audit({"event": "write", **preview})
+    return {"ok": True, "operation": op, "response_xml": text[:20000], "truncated": len(text) > 20000}
