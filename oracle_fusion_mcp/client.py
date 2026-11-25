@@ -29,7 +29,8 @@ RETRY_STATUS = {429, 502, 503, 504}
 STATUS_HINTS = {
     400: "Oracle rejected the payload: read the message/codes, fix the field values (use rest_describe), do not resend unchanged.",
     401: "Authentication failed: check the username/password or OAuth client in the active .env profile.",
-    403: "Signed in but not authorized: the agent user lacks a role/privilege or data access (BU / inventory org) for this resource.",
+    403: "Signed in but not authorized: the agent user lacks a role/privilege or data access (BU / inventory org) for this "
+         "resource. Run ensure_access(<this resource path>) to see and (per the CLAUDE.md self-grant rule) add the missing role.",
     404: "Resource path or record ID not found: check the path with rest_describe / rest_get.",
     409: "Conflict: the record changed or already exists. Re-read it before retrying.",
 }

@@ -20,7 +20,7 @@ Ops: POST, GET; GET/PUT/PATCH/DELETE `/Users/{id}`.
 Query: `filter`, `attributes`, `count`, `startIndex` (1-based), `sortBy`, `sortOrder`.
 Attributes: `id` (GUID, read-only), `schemas` (`urn:scim:schemas:core:2.0:User`), `userName`, `name{familyName,givenName}`, `displayName`, `emails[{value,type,primary}]`, `active`, `password` (write-only), `roles[{id,value,displayName,description}]` (read-only; `value` = role code, e.g. `ORA_PER_EMPLOYEE_ABSTRACT`), `urn:scim:schemas:extension:fa:2.0:faUser{userCategory,accountType,partyInformation[],workerInformation[{businessUnit,department,job,manager,personNumber}],assignServiceAdminRoles}`, `meta{created,lastModified,location}`.
 ```
-GET /hcmRestApi/scim/Users?filter=userName eq "AI_SCM_AGENT"&attributes=id,userName,roles
+GET /hcmRestApi/scim/Users?filter=userName eq "AI_SCM_AGENT"   (no attributes=…roles: the 2026-11-25 pod rejects it with 400 "Attribute roles is not a valid attribute"; the full user includes roles)
 ```
 Response: `{"itemsPerPage":..,"startIndex":1,"Resources":[{...}]}`.
 
@@ -65,7 +65,7 @@ GET /hcmRestApi/resources/11.13.18.05/userAccounts?q=Username='AI_SCM_AGENT'&exp
 - Role provisioning is asynchronous in some flows (LDAP sync) — re-read after a short delay (UNVERIFIED timing).
 
 ## Channel & exact technique
-- Preferred channel: A. Read: SCIM Users with `attributes=id,userName,roles`. Assign: `userAccountRoles` POST with `RoleCode` (one call, by code) or SCIM `PATCH /Roles/{id}`.
+- Preferred channel: A. Read: SCIM Users with only `filter=` (MCP tool `user_roles`). Assign (MCP tool `assign_roles`): `userAccountRoles` POST with `RoleCode` (one call, by code) or SCIM `PATCH /Roles/{id}`.
 - Data access: D (playbook) unless a CSV task is found.
 
 ## How to verify
@@ -86,3 +86,10 @@ GET /hcmRestApi/resources/11.13.18.05/userAccounts?q=Username='AI_SCM_AGENT'&exp
 - SCIM `filter=name eq "<code>"` on Roles (attribute exists; example not shown).
 - No REST for data access assignments in 26D.
 - Exact privilege names required to call SCIM PATCH / userAccountRoles POST.
+
+## MCP tools (2026-11-25)
+- `find_role(text)` — SCIM `Roles?filter=name co "x" or displayName co "x"`.
+- `user_roles(user, filter_text)` — compact role list of any user.
+- `assign_roles(user, [codes], remove=False)` — SCIM `PATCH /Roles/{id}` members ADD/REMOVE; skips held/not-held roles, backs up the user roles to `backups/<date>/` and re-reads to verify. High-impact (CLAUDE.md rule 6).
+- `ensure_access(resource_path)` — maps a 403 resource to the roles that grant it (`security.ROLE_MAP`) and adds the missing ones to the agent user only (add-only; CLAUDE.md self-grant rule).
+- `grant_data_access(user, role_code, context, [values])` — `dataSecurities` POST with `RoleCommonName`; contexts as stored: `Business unit` (BU name), `Inventory organization` (org code), `Reference data set`, cost organization.

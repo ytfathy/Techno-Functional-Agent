@@ -164,3 +164,26 @@ Do not redo finished phases. Never run a write against the real pod without aski
   3. First FSM CSV export of a cost task (e.g. `CST_MANAGE_COST_ORGANIZATIONS`) to learn the CSV structure.
   4. Backlog item 5 (verify the UI playbooks).
   5. Reduce UNVERIFIED items in the 7 new files with pod reads.
+
+## 2026-11-25 — Role management tools (user request: "the agent should be able to edit the role of the user and have access to any role")
+- New `oracle_fusion_mcp/security.py`, registered in `server.py` (MCP now **49 tools**):
+  - `find_role(text)` searches any role by code or name (SCIM `name co` / `displayName co`).
+  - `user_roles(user, filter_text)` gives a compact role list for any user.
+  - `assign_roles(user, [codes], remove=False, dry_run=True)` uses SCIM `PATCH /Roles/{id}` members ADD/REMOVE. It skips roles already held / not held and reports unknown codes. A live run backs up the user's roles to `backups/<date>/` and re-reads to verify.
+  - `grant_data_access(user, role_code, context, [values])` adds `dataSecurities` rows (`RoleCommonName`).
+- All writes go through `generic.write` (dry run by default, PROD guard, audit log).
+- `tests/test_security.py`: 7 mocked tests; suite **54 passed**.
+- `CLAUDE.md`: tools row added; **role / data-access changes are high-impact** (before/after, ask twice); never remove roles from the agent's own user unless the user explicitly asks.
+- `README.md`: role table gains IT Security Manager (always), Cost Accountant, Order Manager / Order Administrator, plus a "Role management by the agent" note.
+- `knowledge/users-roles.md`: fixed the SCIM read note (the new pod rejects `attributes=…roles`) and added the tool list.
+- Not run on the pod yet (agent is OFF; the MCP server must restart to load the new tools). The agent's ability to edit roles depends on the agent user holding IT Security Manager (`HCM` has it on the new pod).
+- **Self-grant on 403 (user request: "the agent can add roles to the user when needed to do a job")**:
+  - New tool `ensure_access(resource_path)` (MCP **50 tools**). It maps the root resource to its roles through `security.ROLE_MAP` (~60 resources: suppliers, POs, reqs, inventory, items, shipping, cost, orders, sourcing, FBDI, FSM, locations, security). It returns the missing roles and the data-access context, and a live run adds only the missing roles to the agent's own user.
+  - The 403 error hint now points to it.
+  - CLAUDE.md "Missing access → self-grant":
+    - DEV/TEST auto mode: grant + data access + retry once.
+    - DEV/TEST confirm mode: one short yes.
+    - PROD: CONFIRM PROD + ask twice.
+    - Add-only; no loops.
+  - 3 more tests, suite **57 passed**.
+  - The mapping is best-known: if a 403 survives the grant, use `find_role` and the area's knowledge file.

@@ -78,7 +78,11 @@ Create a user **`AI_SCM_AGENT`** on TEST first. It needs a worker/person record,
 | Product Data Steward (optional) | `ORA_EGI_PRODUCT_DATA_STEWARD_JOB` | Items, item import |
 | Integration Specialist | `ORA_FND_INTEGRATION_SPECIALIST_JOB` | FBDI / ESS (`erpintegrations`) |
 | Human Resource Specialist | `ORA_PER_HUMAN_RESOURCE_SPECIALIST_JOB` | Locations (`locationsV2`) |
-| IT Security Manager (only if user/role tasks are in scope) | `ORA_FND_IT_SECURITY_MANAGER_JOB` | SCIM role assignment |
+| IT Security Manager | `ORA_FND_IT_SECURITY_MANAGER_JOB` | Lets the agent manage users' roles and data access (`assign_roles`, `grant_data_access`) |
+| Cost Accountant | `ORA_CST_COST_ACCOUNTANT_JOB` | Cost organizations, cost books, standard costs |
+| Order Manager / Order Administrator (if Order Management is in scope) | `ORA_DOO_ORDER_MANAGER_JOB` / `ORA_DOO_ORDER_ADMINISTRATOR_JOB` | Sales orders, orchestration setup |
+
+**Role management by the agent.** With IT Security Manager, the agent can search any role (`find_role`), list any user's roles (`user_roles`), add or remove roles (`assign_roles`) and add data access (`grant_data_access`). It covers supply chain, procurement, finance and custom roles. Role changes are high-impact: the agent shows the before/after, asks twice and backs up the user's roles first. Example: «اعمل للـ user أحمد Inventory Manager و Shipping Manager وأديله access على org 001».
 
 Also request:
 - **Data access** to the relevant BUs (Requisitioning / Procurement / Payables contexts) and inventory orgs. Use Manage Data Access for Users (task `ORA_FUN_MANAGE_DATA_ACCESS_FOR_USERS`).

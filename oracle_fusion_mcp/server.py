@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 
-from . import bulk, client, enterprise, fbdi, fsm, generic, inventory, locations, procurement, smoke, suppliers
+from . import bulk, client, enterprise, fbdi, fsm, generic, inventory, locations, procurement, security, smoke, suppliers
 
 mcp = FastMCP(
     "oracle-fusion",
@@ -57,7 +57,7 @@ TOOLS = [
     # channel B / C
     *fsm.TOOLS, *fbdi.TOOLS,
     # shortcuts
-    *suppliers.TOOLS, *procurement.TOOLS, *locations.TOOLS, *enterprise.TOOLS, *inventory.TOOLS, *bulk.TOOLS,
+    *suppliers.TOOLS, *procurement.TOOLS, *locations.TOOLS, *enterprise.TOOLS, *inventory.TOOLS, *bulk.TOOLS, *security.TOOLS,
 ]
 for _fn in TOOLS:
     mcp.tool()(_fn)
